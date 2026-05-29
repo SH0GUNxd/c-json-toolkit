@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/json.h"
+#include "../src/json.h"
 
 /* Tiny test framework */
 
