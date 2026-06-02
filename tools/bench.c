@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 199309L
+
 /*
  * bench.c  -  microbenchmark for json_parse + json_stringify
  *
