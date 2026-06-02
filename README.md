@@ -56,7 +56,13 @@ json_parser/
 │   ├── json_pointer.c      JSON Pointer (RFC 6901)
 │   └── json_patch.c        JSON Patch (RFC 6902) + json_clone()
 ├── tests/
-│   └── test_json.c         152 assertions - runner autonome
+│   ├── test_parser.c      primitives, strings, arrays, objects, errors, whitespace 
+│   ├── test_get.c         dot-path, array index, nested
+│   ├── test_stringify.c   stringify, prettify, round-trip
+│   ├── test_schema.c      schema validator
+│   ├── test_pointer.c     JSON Pointer
+│   ├── test_patch.c       JSON Patch, clone
+│   └── test_runner.c      main() that calls all suites
 ├── tools/
 │   ├── jsonlint.c          CLI : valider et pretty-printer
 │   ├── bench.c             benchmark throughput

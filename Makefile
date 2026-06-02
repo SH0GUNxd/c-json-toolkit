@@ -22,12 +22,15 @@ libjson.a: $(OBJ)
 	ar rcs $@ $^
 
 # Tests
-check: $(SRC) tests/test_json.c
-	$(CC) $(CFLAGS) $(SRC) tests/test_json.c -o test_runner$(EXE) -lm
+TEST_SRC = $(wildcard tests/*.c)
+
+# Tests
+check: $(SRC) $(TEST_SRC)
+	$(CC) $(CFLAGS) $(SRC) $(TEST_SRC) -o test_runner$(EXE) -lm
 	./test_runner$(EXE)
 
-valgrind: $(SRC) tests/test_json.c
-	$(CC) $(CFLAGS) -g -O0 $(SRC) tests/test_json.c -o test_runner_dbg$(EXE) -lm
+valgrind: $(SRC) $(TEST_SRC)
+	$(CC) $(CFLAGS) -g -O0 $(SRC) $(TEST_SRC) -o test_runner_dbg$(EXE) -lm
 	valgrind --leak-check=full --error-exitcode=1 ./test_runner_dbg$(EXE)
 
 # Tools
