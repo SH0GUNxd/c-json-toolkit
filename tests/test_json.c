@@ -30,7 +30,7 @@ static const char *g_suite = "";
 
 static void report(void)
 {
-    printf("\n──────────────────────────────\n");
+    printf("\n------------------------------\n");
     printf("Results: %d passed, %d failed\n", g_pass, g_fail);
 }
 
