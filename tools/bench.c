@@ -1,5 +1,5 @@
 /*
- * bench.c  –  microbenchmark for json_parse + json_stringify
+ * bench.c  -  microbenchmark for json_parse + json_stringify
  *
  * Usage:
  *   ./bench [file] [iterations]
@@ -11,7 +11,7 @@
  *   - mean / min / max latency per iteration
  */
 
-#include "../src/json_internal.h"
+#include "json_internal.h"
 #include "json.h"
 
 #include <stdio.h>
@@ -19,14 +19,25 @@
 #include <string.h>
 #include <time.h>
 
-/* Timer */
+/* Portable timer */
 
+#ifdef _WIN32
+#  include <windows.h>
+static double now_sec(void)
+{
+    LARGE_INTEGER freq, cnt;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&cnt);
+    return (double)cnt.QuadPart / (double)freq.QuadPart;
+}
+#else
 static double now_sec(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
 }
+#endif
 
 /* Read file */
 
@@ -39,10 +50,10 @@ static char *slurp(const char *path, size_t *out_len)
     rewind(f);
     char *buf = (char *)malloc((size_t)sz + 1);
     if (!buf) { fclose(f); return NULL; }
-    fread(buf, 1, (size_t)sz, f);
-    buf[sz] = '\0';
+    size_t rd = fread(buf, 1, (size_t)sz, f);
+    buf[rd] = '\0';
     fclose(f);
-    if (out_len) *out_len = (size_t)sz;
+    if (out_len) *out_len = rd;
     return buf;
 }
 
