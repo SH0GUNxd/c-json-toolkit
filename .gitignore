@@ -1,0 +1,10 @@
+*.o
+*.a
+test_runner
+test_runner_dbg
+bench
+jsonlint
+fuzz_libfuzzer
+fuzz_standalone
+fuzz_afl
+findings/
