@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get install -y gcc make
+
+      - name: Build and test
+        run: make check
+
+      - name: Build jsonlint
+        run: make jsonlint
+
+      - name: Build bench
+        run: make bench
+
+      - name: Build fuzz standalone
+        run: make fuzz-standalone
+
+      - name: Smoke test jsonlint
+        run: |
+          echo '{"hello":"world"}' | ./jsonlint
+          echo '{"hello":"world"}' | ./jsonlint -c
+          echo '{"hello":"world"}' | ./jsonlint -q
+
+  build-clang:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang
+        run: sudo apt-get install -y clang make
+
+      - name: Build and test with clang
+        run: make check CC=clang
+
+  valgrind:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install valgrind
+        run: sudo apt-get install -y gcc make valgrind
+
+      - name: Leak check
+        run: make valgrind
