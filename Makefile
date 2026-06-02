@@ -1,10 +1,17 @@
 CC      = cc
-CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Werror -Isrc -Iinclude
+CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Werror -Isrc
 
 SRC = src/lexer.c src/unescape.c src/parser.c src/json.c \
       src/stringify.c src/json_schema.c \
       src/json_pointer.c src/json_patch.c
 OBJ     = $(SRC:.c=.o)
+
+# Detect Windows (Git Bash / MinGW)
+ifeq ($(OS),Windows_NT)
+    EXE = .exe
+else
+    EXE =
+endif
 
 .PHONY: all check valgrind bench jsonlint fuzz fuzz-standalone clean
 
@@ -16,43 +23,41 @@ libjson.a: $(OBJ)
 
 # Tests
 check: $(SRC) tests/test_json.c
-	$(CC) $(CFLAGS) $(SRC) tests/test_json.c -o test_runner -lm
-	./test_runner
+	$(CC) $(CFLAGS) $(SRC) tests/test_json.c -o test_runner$(EXE) -lm
+	./test_runner$(EXE)
 
 valgrind: $(SRC) tests/test_json.c
-	$(CC) $(CFLAGS) -g -O0 $(SRC) tests/test_json.c -o test_runner_dbg -lm
-	valgrind --leak-check=full --error-exitcode=1 ./test_runner_dbg
+	$(CC) $(CFLAGS) -g -O0 $(SRC) tests/test_json.c -o test_runner_dbg$(EXE) -lm
+	valgrind --leak-check=full --error-exitcode=1 ./test_runner_dbg$(EXE)
 
 # Tools
 jsonlint: $(SRC) tools/jsonlint.c
-	$(CC) $(CFLAGS) $(SRC) tools/jsonlint.c -o jsonlint -lm
+	$(CC) $(CFLAGS) $(SRC) tools/jsonlint.c -o jsonlint$(EXE) -lm
 
 bench: $(SRC) tools/bench.c
-	$(CC) $(CFLAGS) -O2 $(SRC) tools/bench.c -o bench -lm
-	./bench
+	$(CC) $(CFLAGS) -O2 $(SRC) tools/bench.c -o bench$(EXE) -lm
+	./bench$(EXE)
 
 # Fuzz
-# libFuzzer (clang only)
 fuzz: $(SRC) tools/fuzz.c
 	clang -std=c99 -fsanitize=fuzzer,address \
-	      -Isrc -Iinclude \
-	      $(SRC) tools/fuzz.c -o fuzz_libfuzzer -lm
-	@echo "Run: ./fuzz_libfuzzer corpus/ -max_len=4096"
+	      -Isrc \
+	      $(SRC) tools/fuzz.c -o fuzz_libfuzzer$(EXE) -lm
+	@echo "Run: ./fuzz_libfuzzer$(EXE) corpus/ -max_len=4096"
 
-# Standalone fuzz (reads stdin, no fuzzer engine needed)
 fuzz-standalone: $(SRC) tools/fuzz.c
 	$(CC) $(CFLAGS) -DFUZZ_STANDALONE $(SRC) tools/fuzz.c \
-	      -o fuzz_standalone -lm
-	@echo "Run: echo '{\"x\":1}' | ./fuzz_standalone"
+	      -o fuzz_standalone$(EXE) -lm
+	@echo "Run: echo '{\"x\":1}' | ./fuzz_standalone$(EXE)"
 
-# AFL++ (requires afl-clang-fast in PATH)
 fuzz-afl: $(SRC) tools/fuzz.c
 	AFL_USE_ASAN=1 afl-clang-fast -std=c99 \
-	      -Isrc -Iinclude \
-	      $(SRC) tools/fuzz.c -o fuzz_afl -lm
-	@echo "Run: afl-fuzz -i corpus/ -o findings/ -- ./fuzz_afl"
+	      -Isrc \
+	      $(SRC) tools/fuzz.c -o fuzz_afl$(EXE) -lm
+	@echo "Run: afl-fuzz -i corpus/ -o findings/ -- ./fuzz_afl$(EXE)"
 
 # Clean
 clean:
-	rm -f $(OBJ) libjson.a test_runner test_runner_dbg \
-	      bench jsonlint fuzz_libfuzzer fuzz_standalone fuzz_afl
+	rm -f $(OBJ) libjson.a test_runner$(EXE) test_runner_dbg$(EXE) \
+	      bench$(EXE) jsonlint$(EXE) fuzz_libfuzzer$(EXE) \
+	      fuzz_standalone$(EXE) fuzz_afl$(EXE)
