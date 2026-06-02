@@ -13,8 +13,8 @@
  *   2  usage / IO error
  */
 
-#include "../src/json_internal.h"
-#include "../include/json.h"
+#include "json_internal.h"
+#include "json.h"
 
 #include <stdio.h>
 #include <stdlib.h>
