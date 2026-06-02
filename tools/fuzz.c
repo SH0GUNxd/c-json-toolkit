@@ -1,5 +1,5 @@
 /*
- * fuzz.c  –  fuzz harness for json_parse
+ * fuzz.c  -  fuzz harness for json_parse
  *
  * Compatible with both AFL++ and libFuzzer.
  *
@@ -24,7 +24,7 @@
  *   echo '{"key":42}' | ./fuzz_standalone
  */
 
-#include "../include/json.h"
+#include "json.h"
 
 #include <stdint.h>
 #include <stddef.h>

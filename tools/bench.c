@@ -1,5 +1,5 @@
 /*
- * bench.c  -  microbenchmark for json_parse + json_stringify
+ * bench.c  –  microbenchmark for json_parse + json_stringify
  *
  * Usage:
  *   ./bench [file] [iterations]
@@ -12,7 +12,7 @@
  */
 
 #include "../src/json_internal.h"
-#include "../include/json.h"
+#include "json.h"
 
 #include <stdio.h>
 #include <stdlib.h>
