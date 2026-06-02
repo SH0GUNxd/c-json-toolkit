@@ -39,14 +39,15 @@ Parseur JSON écrit from scratch en C99 strict, sans dépendance externe. Lexer/
 
 ## Structure du projet
 
-```
+```text
 json_parser/
-├── src/
-│   ├── json.h              API publique
+├── include/                API publique
+│   ├── json.h              
+│   ├── json_schema.h       
+│   ├── json_pointer.h      
+│   └── json_patch.h        
+├── src/                    Implémentation interne
 │   ├── json_internal.h     types internes (token_t, parser_t)
-│   ├── json_schema.h       API validateur de schéma
-│   ├── json_pointer.h      API JSON Pointer
-│   ├── json_patch.h        API JSON Patch
 │   ├── lexer.c             tokenizer avec suivi ligne/colonne
 │   ├── unescape.c          décodage strings, UTF-8, surrogate pairs
 │   ├── parser.c            parser récursif descendant
@@ -56,14 +57,14 @@ json_parser/
 │   ├── json_pointer.c      JSON Pointer (RFC 6901)
 │   └── json_patch.c        JSON Patch (RFC 6902) + json_clone()
 ├── tests/
-│   ├── test_framework.h   tiny testing framework macros and shared state
-│   ├── test_parser.c      primitives, strings, arrays, objects, errors, whitespace 
-│   ├── test_get.c         dot-path, array index, nested
-│   ├── test_stringify.c   stringify, prettify, round-trip
-│   ├── test_schema.c      schema validator
-│   ├── test_pointer.c     JSON Pointer
-│   ├── test_patch.c       JSON Patch, clone
-│   └── test_runner.c      main() that calls all suites
+│   ├── test_framework.h    tiny testing framework macros and shared state
+│   ├── test_parser.c       primitives, strings, arrays, objects, errors, whitespace 
+│   ├── test_get.c          dot-path, array index, nested
+│   ├── test_stringify.c    stringify, prettify, round-trip
+│   ├── test_schema.c       schema validator
+│   ├── test_pointer.c      JSON Pointer
+│   ├── test_patch.c        JSON Patch, clone
+│   └── test_runner.c       main() that calls all suites
 ├── tools/
 │   ├── jsonlint.c          CLI : valider et pretty-printer
 │   ├── bench.c             benchmark throughput
