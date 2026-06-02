@@ -3,7 +3,7 @@
  * Build:  make check
  */
 
-#include "../include/json.h"
+#include "json.h"
 #include "../src/json_schema.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -495,6 +495,224 @@ static void test_schema(void)
     json_free(schema); json_free(val);
 }
 
+/* JSON Pointer */
+
+#include "../src/json_pointer.h"
+#include "../src/json_patch.h"
+
+static void test_json_pointer(void)
+{
+    SUITE("JSON Pointer (RFC 6901)");
+    json_pointer_error_t perr;
+    json_value_t *v, *r;
+
+    const char *src =
+        "{"
+        "  \"foo\": [\"bar\", \"baz\"],"
+        "  \"\":    0,"
+        "  \"a/b\": 1,"
+        "  \"c~d\": 2,"
+        "  \"e\\\\f\": 3,"
+        "  \"x\": {\"y\": {\"z\": 42}}"
+        "}";
+    v = parse_ok(src);
+    CHECK(v != NULL);
+
+    /* root */
+    r = json_pointer_get(v, "", &perr);
+    CHECK(r == v);
+
+    /* /foo */
+    r = json_pointer_get(v, "/foo", &perr);
+    CHECK(r && json_is_array(r) && r->v.array.count == 2);
+
+    /* /foo/0 */
+    r = json_pointer_get(v, "/foo/0", &perr);
+    CHECK(r && json_is_string(r) && strcmp(r->v.string, "bar") == 0);
+
+    /* /foo/1 */
+    r = json_pointer_get(v, "/foo/1", &perr);
+    CHECK(r && json_is_string(r) && strcmp(r->v.string, "baz") == 0);
+
+    /* / (empty key) */
+    r = json_pointer_get(v, "/", &perr);
+    CHECK(r && json_is_number(r) && r->v.number == 0.0);
+
+    /* /a~1b → key "a/b" */
+    r = json_pointer_get(v, "/a~1b", &perr);
+    CHECK(r && json_is_number(r) && r->v.number == 1.0);
+
+    /* /c~0d → key "c~d" */
+    r = json_pointer_get(v, "/c~0d", &perr);
+    CHECK(r && json_is_number(r) && r->v.number == 2.0);
+
+    /* deep path */
+    r = json_pointer_get(v, "/x/y/z", &perr);
+    CHECK(r && json_is_number(r) && r->v.number == 42.0);
+
+    /* not found */
+    r = json_pointer_get(v, "/nope", &perr);
+    CHECK(r == NULL);
+
+    /* out of bounds */
+    r = json_pointer_get(v, "/foo/5", &perr);
+    CHECK(r == NULL);
+
+    json_free(v);
+
+    /* set: update existing key */
+    v = parse_ok("{\"a\":1,\"b\":2}");
+    json_value_t *newval = parse_ok("99");
+    CHECK(json_pointer_set(v, "/a", newval, &perr) == 1);
+    r = json_pointer_get(v, "/a", &perr);
+    CHECK(r && r->v.number == 99.0);
+    json_free(v);
+
+    /* set: add new key */
+    v = parse_ok("{\"a\":1}");
+    newval = parse_ok("\"hello\"");
+    CHECK(json_pointer_set(v, "/b", newval, &perr) == 1);
+    r = json_pointer_get(v, "/b", &perr);
+    CHECK(r && json_is_string(r) && strcmp(r->v.string, "hello") == 0);
+    json_free(v);
+
+    /* set: append to array with /- */
+    v = parse_ok("[1,2,3]");
+    newval = parse_ok("4");
+    CHECK(json_pointer_set(v, "/-", newval, &perr) == 1);
+    CHECK(v->v.array.count == 4);
+    CHECK(v->v.array.items[3]->v.number == 4.0);
+    json_free(v);
+
+    /* remove: object key */
+    v = parse_ok("{\"a\":1,\"b\":2}");
+    CHECK(json_pointer_remove(v, "/a", &perr) == 1);
+    CHECK(v->v.object.count == 1);
+    CHECK(json_pointer_get(v, "/a", &perr) == NULL);
+    json_free(v);
+
+    /* remove: array element */
+    v = parse_ok("[10,20,30]");
+    CHECK(json_pointer_remove(v, "/1", &perr) == 1);
+    CHECK(v->v.array.count == 2);
+    CHECK(v->v.array.items[0]->v.number == 10.0);
+    CHECK(v->v.array.items[1]->v.number == 30.0);
+    json_free(v);
+}
+
+/* JSON Patch */
+
+static void test_json_patch(void)
+{
+    SUITE("JSON Patch (RFC 6902)");
+    json_patch_error_t perr;
+    json_value_t *doc, *patch, *result;
+
+    /* add */
+    doc   = parse_ok("{\"a\":1}");
+    patch = parse_ok("[{\"op\":\"add\",\"path\":\"/b\",\"value\":2}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result != NULL);
+    CHECK(json_pointer_get(result, "/b", NULL) &&
+          json_pointer_get(result, "/b", NULL)->v.number == 2.0);
+    CHECK(doc->v.object.count == 1); /* original untouched */
+    json_free(doc); json_free(patch); json_free(result);
+
+    /* remove */
+    doc   = parse_ok("{\"a\":1,\"b\":2}");
+    patch = parse_ok("[{\"op\":\"remove\",\"path\":\"/a\"}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result != NULL);
+    CHECK(json_pointer_get(result, "/a", NULL) == NULL);
+    CHECK(json_pointer_get(result, "/b", NULL) != NULL);
+    json_free(doc); json_free(patch); json_free(result);
+
+    /* replace */
+    doc   = parse_ok("{\"x\":\"old\"}");
+    patch = parse_ok("[{\"op\":\"replace\",\"path\":\"/x\",\"value\":\"new\"}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result != NULL);
+    json_value_t *x = json_pointer_get(result, "/x", NULL);
+    CHECK(x && strcmp(x->v.string, "new") == 0);
+    json_free(doc); json_free(patch); json_free(result);
+
+    /* move */
+    doc   = parse_ok("{\"a\":42,\"b\":0}");
+    patch = parse_ok("[{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/b\"}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result != NULL);
+    CHECK(json_pointer_get(result, "/a", NULL) == NULL);
+    CHECK(json_pointer_get(result, "/b", NULL)->v.number == 42.0);
+    json_free(doc); json_free(patch); json_free(result);
+
+    /* copy */
+    doc   = parse_ok("{\"a\":99}");
+    patch = parse_ok("[{\"op\":\"copy\",\"from\":\"/a\",\"path\":\"/b\"}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result != NULL);
+    CHECK(json_pointer_get(result, "/a", NULL)->v.number == 99.0);
+    CHECK(json_pointer_get(result, "/b", NULL)->v.number == 99.0);
+    json_free(doc); json_free(patch); json_free(result);
+
+    /* test: pass */
+    doc   = parse_ok("{\"v\":1}");
+    patch = parse_ok("[{\"op\":\"test\",\"path\":\"/v\",\"value\":1}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result != NULL);
+    json_free(doc); json_free(patch); json_free(result);
+
+    /* test: fail → whole patch returns NULL, original untouched */
+    doc   = parse_ok("{\"v\":1}");
+    patch = parse_ok("[{\"op\":\"test\",\"path\":\"/v\",\"value\":999}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result == NULL);
+    CHECK(perr.op_index == 0);
+    json_free(doc); json_free(patch);
+
+    /* atomic: failure mid-patch leaves original untouched */
+    doc   = parse_ok("{\"a\":1}");
+    patch = parse_ok("["
+                     "{\"op\":\"add\",\"path\":\"/b\",\"value\":2},"
+                     "{\"op\":\"remove\",\"path\":\"/nope\"}"
+                     "]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result == NULL);
+    CHECK(doc->v.object.count == 1); /* original still has only "a" */
+    json_free(doc); json_free(patch);
+
+    /* array append with /- */
+    doc   = parse_ok("{\"tags\":[\"a\",\"b\"]}");
+    patch = parse_ok("[{\"op\":\"add\",\"path\":\"/tags/-\",\"value\":\"c\"}]");
+    result = json_patch_apply(doc, patch, &perr);
+    CHECK(result != NULL);
+    json_value_t *tags = json_pointer_get(result, "/tags", NULL);
+    CHECK(tags && tags->v.array.count == 3);
+    CHECK(strcmp(tags->v.array.items[2]->v.string, "c") == 0);
+    json_free(doc); json_free(patch); json_free(result);
+}
+
+/* json_clone */
+
+static void test_clone(void)
+{
+    SUITE("json_clone");
+    const char *src = "{\"a\":1,\"b\":[1,2,{\"c\":true}]}";
+    json_value_t *orig  = parse_ok(src);
+    json_value_t *clone = json_clone(orig);
+    CHECK(clone != NULL);
+    CHECK(clone != orig);
+
+    /* deep independence: mutate clone, original unchanged */
+    json_pointer_error_t perr;
+    json_value_t *newval = parse_ok("99");
+    json_pointer_set(clone, "/a", newval, &perr);
+    CHECK(json_pointer_get(orig,  "/a", NULL)->v.number == 1.0);
+    CHECK(json_pointer_get(clone, "/a", NULL)->v.number == 99.0);
+
+    json_free(orig);
+    json_free(clone);
+}
+
 /* main */
 
 int main(void)
@@ -514,6 +732,9 @@ int main(void)
     test_real_world();
     test_stringify();
     test_schema();
+    test_json_pointer();
+    test_json_patch();
+    test_clone();
 
     report();
     return g_fail > 0 ? 1 : 0;

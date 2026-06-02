@@ -1,5 +1,5 @@
 #include "json_internal.h"
-#include "../include/json.h"
+#include "json.h"
 
 #include <stdlib.h>
 #include <string.h>
