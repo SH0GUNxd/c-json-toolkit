@@ -1,5 +1,6 @@
 *.o
 *.a
+*.exe
 test_runner
 test_runner_dbg
 bench
