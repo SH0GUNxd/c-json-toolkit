@@ -1,46 +1,136 @@
-# json_parser
+# json_parser - Parseur JSON en C
 
-A JSON parser written from scratch in C99. No external dependencies, zero leaks.
+**Auteur :** Félix Vandenbroucke · Dev 2026
 
-## Features
+Parseur JSON écrit from scratch en C99 strict, sans dépendance externe. Lexer/parser récursif descendant, conformité RFC 8259 complète, sérialisation, validation de schéma, JSON Pointer et JSON Patch. 152 tests, zéro leak, CI GitHub Actions.
 
-- All JSON types: `null`, `bool`, `number`, `string`, `array`, `object`
-- Full RFC 8259 compliance - rejects leading zeros, trailing commas, bare keywords, lone surrogates, control characters
-- Unicode: `\uXXXX` escapes, surrogate pair decoding (`\uD83D\uDE00` → UTF-8)
-- Precise error reporting with line and column
-- Nesting depth guard (MAX_DEPTH = 512)
-- `json_stringify()` / `json_prettify()` - serialization with round-trip guarantee
-- `json_get("user.address.city")` - dot-path navigation including array indices (`"items.2.name"`)
-- `json_schema_validate()` - subset of JSON Schema draft-07
-- CLI tool: `jsonlint` - validate and pretty-print files
-- Benchmark: parse + stringify throughput in MB/s
-- Fuzz harness: AFL++ and libFuzzer compatible, with round-trip invariant checking
-- 101 tests
+---
+
+## Fonctionnalités
+
+- Parse tous les types JSON : `null`, `bool`, `number`, `string`, `array`, `object`
+- **Conformité RFC 8259** : rejette les leading zeros, virgules finales, mots-clés nus, surrogates isolés, caractères de contrôle
+- **Unicode** : escapes `\uXXXX`, décodage des surrogate pairs (`\uD83D\uDE00` → UTF-8)
+- **Erreurs précises** : message + ligne + colonne
+- **Profondeur max** : guard à 512 niveaux
+- **`json_stringify()` / `json_prettify()`** : sérialisation avec garantie de round-trip
+- **`json_get("user.address.city")`** : navigation dot-path avec index tableau (`"items.2.name"`)
+- **`json_schema_validate()`** : sous-ensemble JSON Schema draft-07
+- **JSON Pointer** (RFC 6901) : get / set / remove via `/foo/0/bar`
+- **JSON Patch** (RFC 6902) : `add`, `remove`, `replace`, `move`, `copy`, `test` - atomique
+- **`json_clone()`** : copie profonde
+- **CLI `jsonlint`** : valider et pretty-printer des fichiers JSON
+- **Benchmark** : throughput `json_parse` + `json_stringify` en MB/s
+- **Fuzz harness** : compatible AFL++ et libFuzzer, vérifie le round-trip
+
+---
+
+## Stack
+
+| Couche       | Technologie                                      |
+|--------------|--------------------------------------------------|
+| Langage      | C99 strict, `-pedantic -Wall -Wextra -Werror`    |
+| Parser       | Lexer/parser récursif descendant maison          |
+| Tests        | Runner maison, zéro dépendance externe           |
+| Fuzz         | AFL++ / libFuzzer                                |
+| CI           | GitHub Actions (gcc + clang + valgrind)          |
+
+---
+
+## Structure du projet
+
+```
+json_parser/
+├── src/
+│   ├── json.h              API publique
+│   ├── json_internal.h     types internes (token_t, parser_t)
+│   ├── json_schema.h       API validateur de schéma
+│   ├── json_pointer.h      API JSON Pointer
+│   ├── json_patch.h        API JSON Patch
+│   ├── lexer.c             tokenizer avec suivi ligne/colonne
+│   ├── unescape.c          décodage strings, UTF-8, surrogate pairs
+│   ├── parser.c            parser récursif descendant
+│   ├── json.c              json_parse / json_get / json_free
+│   ├── stringify.c         json_stringify / json_prettify
+│   ├── json_schema.c       validateur de schéma
+│   ├── json_pointer.c      JSON Pointer (RFC 6901)
+│   └── json_patch.c        JSON Patch (RFC 6902) + json_clone()
+├── tests/
+│   └── test_json.c         152 assertions - runner autonome
+├── tools/
+│   ├── jsonlint.c          CLI : valider et pretty-printer
+│   ├── bench.c             benchmark throughput
+│   └── fuzz.c              harness AFL++ / libFuzzer
+├── corpus/                 seeds pour le fuzzer
+├── .github/workflows/      CI GitHub Actions
+├── Makefile
+└── README.md
+```
+
+---
+
+## Prérequis
+
+**GCC ou Clang** avec support C99.
+
+```bash
+cc --version
+make --version
+```
+
+---
+
+## Build
+
+```bash
+# Compiler la bibliothèque
+make
+
+# Lancer les 152 tests
+make check
+
+# Compiler le CLI jsonlint
+make jsonlint
+
+# Compiler et lancer le benchmark
+make bench
+```
+
+---
 
 ## API
 
 ```c
-// Parse
+// Parser
 json_value_t *json_parse(const char *input, json_error_t *err);
 
-// Navigate: dot-path, numeric segments index arrays
+// Navigation : dot-path, segments numériques pour les tableaux
 json_value_t *json_get(const json_value_t *root, const char *path);
 json_value_t *json_array_get(const json_value_t *arr, size_t index);
 
-// Serialize - caller must free()
+// Sérialisation - à libérer avec free()
 char *json_stringify(const json_value_t *val);
 char *json_prettify(const json_value_t *val);
 
-// Schema validation (subset of draft-07)
+// Validation de schéma (draft-07 subset)
 int json_schema_validate(const json_value_t *schema,
                          const json_value_t *value,
                          json_schema_error_t *err);
 
-// Free
-void json_free(json_value_t *val);
+// JSON Pointer (RFC 6901)
+json_value_t *json_pointer_get(const json_value_t *root, const char *pointer, json_pointer_error_t *err);
+int           json_pointer_set(json_value_t *root, const char *pointer, json_value_t *value, json_pointer_error_t *err);
+int           json_pointer_remove(json_value_t *root, const char *pointer, json_pointer_error_t *err);
+
+// JSON Patch (RFC 6902)
+json_value_t *json_patch_apply(const json_value_t *doc, const json_value_t *patch, json_patch_error_t *err);
+
+// Copie profonde / libération
+json_value_t *json_clone(const json_value_t *val);
+void          json_free(json_value_t *val);
 ```
 
-## Usage
+### Exemple
 
 ```c
 #include "json.h"
@@ -62,30 +152,24 @@ free(out);
 json_free(root);
 ```
 
-## Build
+---
 
-```sh
-make              # builds libjson.a
-make check        # 101 tests
-make jsonlint     # CLI validator/pretty-printer
-make bench        # throughput benchmark
-make fuzz-standalone  # fuzz harness (reads stdin)
-make fuzz         # libFuzzer (requires clang)
-make fuzz-afl     # AFL++ (requires afl-clang-fast)
-```
+## CLI `jsonlint`
 
-## CLI
-
-```sh
-./jsonlint file.json          # validate + pretty-print
-./jsonlint -c file.json       # compact output
-./jsonlint -q file.json       # quiet, exit code only
+```bash
+./jsonlint file.json          # valider + pretty-print
+./jsonlint -c file.json       # sortie compacte
+./jsonlint -q file.json       # silencieux, exit code seulement
 echo '{"x":1}' | ./jsonlint   # stdin
 ```
 
-## Schema validation
+Codes de retour : `0` valide · `1` erreur de parsing · `2` erreur IO/usage.
 
-Supported keywords: `type`, `properties`, `required`, `additionalProperties`,
+---
+
+## Validation de schéma
+
+Mots-clés supportés : `type`, `properties`, `required`, `additionalProperties`,
 `items`, `minItems`, `maxItems`, `minimum`, `maximum`, `minLength`, `maxLength`,
 `enum`, `const`.
 
@@ -93,28 +177,46 @@ Supported keywords: `type`, `properties`, `required`, `additionalProperties`,
 json_value_t *schema = json_parse(
     "{\"type\":\"object\","
     " \"required\":[\"id\",\"name\"],"
-    " \"properties\":{\"id\":{\"type\":\"integer\"},\"name\":{\"type\":\"string\"}}}", NULL);
+    " \"properties\":{"
+    "   \"id\":{\"type\":\"integer\"},"
+    "   \"name\":{\"type\":\"string\"}"
+    " }}", NULL);
 
 json_schema_error_t serr;
 if (!json_schema_validate(schema, value, &serr))
     fprintf(stderr, "%s: %s\n", serr.path, serr.message);
 ```
 
-## Structure
+---
 
+## Tests
+
+**152 assertions, zéro dépendance externe.**
+
+```bash
+make check
 ```
-src/json.h              public API
-src/json_internal.h     internal types (token_t, parser_t)
-src/json_schema.h       schema validator API
-src/lexer.c             tokenizer with line/col tracking
-src/unescape.c          string decoding, UTF-8, surrogate pairs
-src/parser.c            recursive descent parser
-src/json.c              json_parse / json_get / json_free
-src/stringify.c         json_stringify / json_prettify
-src/json_schema.c       schema validator
-tools/jsonlint.c        CLI tool
-tools/bench.c           throughput benchmark
-tools/fuzz.c            AFL++ / libFuzzer harness
-tests/test_json.c       101-test runner
-corpus/                 fuzz seed inputs
+
+Couvre : primitifs, strings, tableaux, objets, dot-path, index tableau, nesting profond (400 ok / 600 rejeté), whitespace, 22 cas d'erreur, localisation d'erreur, round-trip stringify, validation de schéma, JSON Pointer, JSON Patch, clone.
+
+---
+
+## Fuzz
+
+```bash
+# Standalone (lit stdin)
+make fuzz-standalone
+echo '{"x":1}' | ./fuzz_standalone
+
+# libFuzzer (clang requis)
+make fuzz
+./fuzz_libfuzzer corpus/ -max_len=4096
+
+# AFL++
+make fuzz-afl
+afl-fuzz -i corpus/ -o findings/ -- ./fuzz_afl
 ```
+
+Le harness vérifie deux invariants sur chaque entrée :
+1. Pas de crash sur des octets arbitraires
+2. Round-trip : `stringify(parse(x))` doit toujours re-parser sans erreur
