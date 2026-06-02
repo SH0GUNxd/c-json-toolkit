@@ -1,5 +1,5 @@
 #include "test_framework.h"
-#include "../src/json_pointer.h"
+#include "json_pointer.h"
 
 static void test_json_pointer(void)
 {

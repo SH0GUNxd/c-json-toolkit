@@ -1,5 +1,5 @@
 CC      = cc
-CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Werror -Isrc
+CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Werror -Isrc -Iinclude
 
 SRC = src/lexer.c src/unescape.c src/parser.c src/json.c \
       src/stringify.c src/json_schema.c \
@@ -44,7 +44,7 @@ bench: $(SRC) tools/bench.c
 # Fuzz
 fuzz: $(SRC) tools/fuzz.c
 	clang -std=c99 -fsanitize=fuzzer,address \
-	      -Isrc \
+	      -Isrc -Iinclude \
 	      $(SRC) tools/fuzz.c -o fuzz_libfuzzer$(EXE) -lm
 	@echo "Run: ./fuzz_libfuzzer$(EXE) corpus/ -max_len=4096"
 
@@ -55,10 +55,10 @@ fuzz-standalone: $(SRC) tools/fuzz.c
 
 fuzz-afl: $(SRC) tools/fuzz.c
 	AFL_USE_ASAN=1 afl-clang-fast -std=c99 \
-	      -Isrc \
+	      -Isrc -Iinclude \
 	      $(SRC) tools/fuzz.c -o fuzz_afl$(EXE) -lm
 	@echo "Run: afl-fuzz -i corpus/ -o findings/ -- ./fuzz_afl$(EXE)"
-
+	
 # Clean
 clean:
 	rm -f $(OBJ) libjson.a test_runner$(EXE) test_runner_dbg$(EXE) \

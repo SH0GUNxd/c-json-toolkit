@@ -1,5 +1,5 @@
 #include "test_framework.h"
-#include "../src/json_schema.h"
+#include "json_schema.h"
 
 static void test_schema(void)
 {
