@@ -17,15 +17,19 @@ jobs:
         run: sudo apt-get install -y gcc make
 
       - name: Build and test
+        timeout-minutes: 5
         run: make check
 
       - name: Build jsonlint
+        timeout-minutes: 5
         run: make jsonlint
 
       - name: Build bench
+        timeout-minutes: 5
         run: make bench
 
       - name: Build fuzz standalone
+        timeout-minutes: 5
         run: make fuzz-standalone
 
       - name: Smoke test jsonlint
@@ -44,6 +48,7 @@ jobs:
         run: sudo apt-get install -y clang make
 
       - name: Build and test with clang
+        timeout-minutes: 5
         run: make check CC=clang
 
   valgrind:
@@ -56,4 +61,5 @@ jobs:
         run: sudo apt-get install -y gcc make valgrind
 
       - name: Leak check
+        timeout-minutes: 5
         run: make valgrind
