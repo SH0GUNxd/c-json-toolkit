@@ -56,6 +56,7 @@ json_parser/
 │   ├── json_pointer.c      JSON Pointer (RFC 6901)
 │   └── json_patch.c        JSON Patch (RFC 6902) + json_clone()
 ├── tests/
+│   ├── test_framework.h   tiny testing framework macros and shared state
 │   ├── test_parser.c      primitives, strings, arrays, objects, errors, whitespace 
 │   ├── test_get.c         dot-path, array index, nested
 │   ├── test_stringify.c   stringify, prettify, round-trip
