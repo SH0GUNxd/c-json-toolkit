@@ -3,15 +3,14 @@
 static void test_nested(void)
 {
     SUITE("Nested / json_get dot-path");
-    const char *src =
-        "{"
-        "  \"user\": {"
-        "    \"name\": \"Felix\","
-        "    \"address\": {"
-        "      \"city\": \"Paris\""
-        "    }"
-        "  }"
-        "}";
+    const char *src = "{"
+                      "  \"user\": {"
+                      "    \"name\": \"Felix\","
+                      "    \"address\": {"
+                      "      \"city\": \"Paris\""
+                      "    }"
+                      "  }"
+                      "}";
     json_value_t *v = parse_ok(src);
     CHECK(v != NULL);
     json_value_t *city = json_get(v, "user.address.city");
@@ -36,7 +35,7 @@ static void test_get_array_index(void)
     CHECK(name0 && strcmp(name0->v.string, "a") == 0);
 
     CHECK(json_get(v, "items.99.name") == NULL);
-    CHECK(json_get(v, "items.0.nope")  == NULL);
+    CHECK(json_get(v, "items.0.nope") == NULL);
     json_free(v);
 }
 

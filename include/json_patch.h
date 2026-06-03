@@ -20,9 +20,10 @@
  * original is never modified on failure (atomic semantics).
  */
 
-typedef struct {
+typedef struct
+{
     char message[256];
-    int  op_index;   /* index of the failing operation, -1 if pre-flight */
+    int op_index; /* index of the failing operation, -1 if pre-flight */
 } json_patch_error_t;
 
 /*
@@ -32,9 +33,9 @@ typedef struct {
  * Returns NULL on error and fills *err if provided.
  * The original document is never modified.
  */
-json_value_t *json_patch_apply(const json_value_t  *doc,
-                               const json_value_t  *patch,
-                               json_patch_error_t  *err);
+json_value_t *json_patch_apply(const json_value_t *doc,
+                               const json_value_t *patch,
+                               json_patch_error_t *err);
 
 /*
  * json_clone  - deep copy a json_value_t tree. Returns NULL on OOM.

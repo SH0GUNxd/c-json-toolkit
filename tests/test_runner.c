@@ -1,7 +1,8 @@
-#include "test_framework.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "test_framework.h"
 
 /* Global test framework state */
 int g_pass = 0;
@@ -21,9 +22,10 @@ json_value_t *parse_ok(const char *s)
 {
     json_error_t err;
     json_value_t *v = json_parse(s, &err);
-    if (!v) {
-        printf("  [parse_ok] UNEXPECTED ERROR: %s at %d:%d\n",
-               err.message, err.line, err.col);
+    if (!v)
+    {
+        printf("  [parse_ok] UNEXPECTED ERROR: %s at %d:%d\n", err.message,
+               err.line, err.col);
     }
     return v;
 }
@@ -32,9 +34,10 @@ int parse_fails(const char *s)
 {
     json_error_t err;
     json_value_t *v = json_parse(s, &err);
-    if (v) { 
-        json_free(v); 
-        return 0; 
+    if (v)
+    {
+        json_free(v);
+        return 0;
     }
     return 1;
 }

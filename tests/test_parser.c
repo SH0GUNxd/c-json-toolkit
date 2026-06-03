@@ -98,7 +98,8 @@ static void test_arrays(void)
 
     v = parse_ok("[1, 2, 3]");
     CHECK(v && json_is_array(v) && v->v.array.count == 3);
-    if (v) {
+    if (v)
+    {
         CHECK(json_array_get(v, 0)->v.number == 1.0);
         CHECK(json_array_get(v, 2)->v.number == 3.0);
         CHECK(json_array_get(v, 99) == NULL);
@@ -143,8 +144,10 @@ static void test_deep_nesting(void)
     SUITE("Deep nesting");
     int depth = 400;
     char *s = (char *)malloc((size_t)(depth * 2 + 1));
-    for (int i = 0; i < depth; i++) s[i] = '[';
-    for (int i = 0; i < depth; i++) s[depth + i] = ']';
+    for (int i = 0; i < depth; i++)
+        s[i] = '[';
+    for (int i = 0; i < depth; i++)
+        s[depth + i] = ']';
     s[depth * 2] = '\0';
 
     json_value_t *v = parse_ok(s);
@@ -154,8 +157,10 @@ static void test_deep_nesting(void)
 
     depth = 600;
     s = (char *)malloc((size_t)(depth * 2 + 1));
-    for (int i = 0; i < depth; i++) s[i] = '[';
-    for (int i = 0; i < depth; i++) s[depth + i] = ']';
+    for (int i = 0; i < depth; i++)
+        s[i] = '[';
+    for (int i = 0; i < depth; i++)
+        s[depth + i] = ']';
     s[depth * 2] = '\0';
     CHECK_MSG(parse_fails(s), "600 levels rejected (exceeds MAX_DEPTH)");
     free(s);
@@ -208,8 +213,8 @@ static void test_error_location(void)
     json_error_t err;
     json_parse("{\"a\"\n:\n!}", &err);
     CHECK_MSG(err.line == 3, "error on correct line");
-    printf("  (reported: line=%d col=%d msg='%s')\n",
-           err.line, err.col, err.message);
+    printf("  (reported: line=%d col=%d msg='%s')\n", err.line, err.col,
+           err.message);
 }
 
 static void test_real_world(void)
@@ -231,9 +236,10 @@ static void test_real_world(void)
     json_value_t *v = parse_ok(src);
     CHECK(v != NULL);
     CHECK(json_get(v, "id") && json_get(v, "id")->v.number == 42.0);
-    CHECK(json_get(v, "meta.debug") && json_get(v, "meta.debug")->v.boolean == 0);
-    CHECK(json_get(v, "meta.score") &&
-          fabs(json_get(v, "meta.score")->v.number - 98.5) < 1e-9);
+    CHECK(json_get(v, "meta.debug")
+          && json_get(v, "meta.debug")->v.boolean == 0);
+    CHECK(json_get(v, "meta.score")
+          && fabs(json_get(v, "meta.score")->v.number - 98.5) < 1e-9);
     json_value_t *flags = json_get(v, "flags");
     CHECK(flags && json_is_array(flags) && flags->v.array.count == 3);
     json_free(v);

@@ -24,13 +24,13 @@
  *   echo '{"key":42}' | ./fuzz_standalone
  */
 
-#include "json.h"
-
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
+#include "json.h"
 
 /* Invariant checks */
 
@@ -43,16 +43,20 @@
 static void check_roundtrip(const json_value_t *root)
 {
     char *s = json_stringify(root);
-    if (!s) return; /* OOM - not a bug */
+    if (!s)
+        return; /* OOM - not a bug */
 
-    json_error_t  err;
+    json_error_t err;
     json_value_t *rt = json_parse(s, &err);
     free(s);
 
     /* A valid serialize must always re-parse */
-    if (!rt) {
-        fprintf(stderr, "ROUNDTRIP FAILURE: stringify output failed to re-parse: "
-                        "%s at %d:%d\n", err.message, err.line, err.col);
+    if (!rt)
+    {
+        fprintf(stderr,
+                "ROUNDTRIP FAILURE: stringify output failed to re-parse: "
+                "%s at %d:%d\n",
+                err.message, err.line, err.col);
         abort();
     }
     json_free(rt);
@@ -66,15 +70,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Make a null-terminated copy - json_parse expects one */
     char *buf = (char *)malloc(size + 1);
-    if (!buf) return 0;
+    if (!buf)
+        return 0;
     memcpy(buf, data, size);
     buf[size] = '\0';
 
-    json_error_t  err;
+    json_error_t err;
     json_value_t *root = json_parse(buf, &err);
     free(buf);
 
-    if (root) {
+    if (root)
+    {
         check_roundtrip(root);
         json_free(root);
     }
@@ -90,26 +96,34 @@ int main(void)
 {
     /* Read stdin */
     size_t cap = 4096, len = 0;
-    char  *buf = (char *)malloc(cap);
-    if (!buf) return 1;
+    char *buf = (char *)malloc(cap);
+    if (!buf)
+        return 1;
 
     size_t n;
-    while ((n = fread(buf + len, 1, cap - len - 1, stdin)) > 0) {
+    while ((n = fread(buf + len, 1, cap - len - 1, stdin)) > 0)
+    {
         len += n;
-        if (len + 1 == cap) {
+        if (len + 1 == cap)
+        {
             cap *= 2;
             char *tmp = (char *)realloc(buf, cap);
-            if (!tmp) { free(buf); return 1; }
+            if (!tmp)
+            {
+                free(buf);
+                return 1;
+            }
             buf = tmp;
         }
     }
     buf[len] = '\0';
 
-    json_error_t  err;
+    json_error_t err;
     json_value_t *root = json_parse(buf, &err);
     free(buf);
 
-    if (!root) {
+    if (!root)
+    {
         printf("INVALID: %s at %d:%d\n", err.message, err.line, err.col);
         return 1;
     }
@@ -117,7 +131,11 @@ int main(void)
     check_roundtrip(root);
 
     char *pretty = json_prettify(root);
-    if (pretty) { puts(pretty); free(pretty); }
+    if (pretty)
+    {
+        puts(pretty);
+        free(pretty);
+    }
     json_free(root);
     return 0;
 }

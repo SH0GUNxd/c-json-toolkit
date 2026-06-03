@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "json_pointer.h"
+#include "test_framework.h"
 
 static void test_json_pointer(void)
 {
@@ -7,15 +7,14 @@ static void test_json_pointer(void)
     json_pointer_error_t perr;
     json_value_t *v, *r;
 
-    const char *src =
-        "{"
-        "  \"foo\": [\"bar\", \"baz\"],"
-        "  \"\":    0,"
-        "  \"a/b\": 1,"
-        "  \"c~d\": 2,"
-        "  \"e\\\\f\": 3,"
-        "  \"x\": {\"y\": {\"z\": 42}}"
-        "}";
+    const char *src = "{"
+                      "  \"foo\": [\"bar\", \"baz\"],"
+                      "  \"\":    0,"
+                      "  \"a/b\": 1,"
+                      "  \"c~d\": 2,"
+                      "  \"e\\\\f\": 3,"
+                      "  \"x\": {\"y\": {\"z\": 42}}"
+                      "}";
     v = parse_ok(src);
     CHECK(v != NULL);
 

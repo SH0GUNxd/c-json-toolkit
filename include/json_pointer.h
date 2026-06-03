@@ -16,7 +16,8 @@
  *   "/-"            → (resolve only) past-the-end of array (write context)
  */
 
-typedef struct {
+typedef struct
+{
     char message[256];
 } json_pointer_error_t;
 
@@ -24,8 +25,7 @@ typedef struct {
  * json_pointer_get  - resolve a JSON Pointer against a document.
  *                     Returns NULL if pointer is invalid or path not found.
  */
-json_value_t *json_pointer_get(const json_value_t *root,
-                               const char         *pointer,
+json_value_t *json_pointer_get(const json_value_t *root, const char *pointer,
                                json_pointer_error_t *err);
 
 /*
@@ -34,17 +34,14 @@ json_value_t *json_pointer_get(const json_value_t *root,
  *                     Returns 1 on success, 0 on error.
  *                     root must be non-NULL; cannot replace the root itself.
  */
-int json_pointer_set(json_value_t        *root,
-                     const char          *pointer,
-                     json_value_t        *value,
-                     json_pointer_error_t *err);
+int json_pointer_set(json_value_t *root, const char *pointer,
+                     json_value_t *value, json_pointer_error_t *err);
 
 /*
  * json_pointer_remove - remove the value at the given pointer path.
  *                       Returns 1 on success, 0 on error.
  */
-int json_pointer_remove(json_value_t        *root,
-                        const char          *pointer,
+int json_pointer_remove(json_value_t *root, const char *pointer,
                         json_pointer_error_t *err);
 
 #endif /* JSON_POINTER_H */
